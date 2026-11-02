@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Connecter">
+<title>Connecter</title>
+<style>
+  :root { --bg:#111317; --card:#1f232b; --card2:#2b313c; --text:#f2f4f8; --muted:#8b93a3; --accent:#4f8cff; --ok:#33c26b; --bad:#ff5a5a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:16px -apple-system, system-ui, sans-serif; overscroll-behavior:none; }
+  header { display:flex; align-items:center; gap:12px; padding:calc(env(safe-area-inset-top) + 10px) 16px 10px; }
+  #dot { width:12px; height:12px; border-radius:50%; background:var(--bad); }
+  #dot.on { background:var(--ok); }
+  #status { color:var(--muted); flex:1; }
+  header button { background:var(--card2); color:var(--text); border:0; border-radius:10px; padding:10px 16px; font-size:16px; }
+  header button.active { background:var(--accent); }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; padding:8px 16px calc(env(safe-area-inset-bottom) + 16px); }
+  .key { position:relative; height:120px; border-radius:18px; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; touch-action:none; transition:transform .05s; }
+  .key.down { background:var(--accent); transform:scale(.96); }
+  .key .label { font-size:26px; font-weight:700; text-align:center; padding:0 8px; }
+  .key .combo { font-size:13px; color:var(--muted); margin-top:6px; }
+  .key.down .combo { color:#dfe8ff; }
+  body.edit .key { outline:2px dashed var(--muted); }
+  .key.add { background:transparent; outline:2px dashed var(--card2); font-size:40px; color:var(--muted); display:none; }
+  body.edit .key.add { display:flex; }
+  dialog { background:var(--card); color:var(--text); border:0; border-radius:16px; width:min(420px, 92vw); padding:20px; }
+  dialog::backdrop { background:rgba(0,0,0,.6); }
+  dialog label { display:block; color:var(--muted); font-size:14px; margin:12px 0 4px; }
+  dialog input { width:100%; padding:12px; font-size:18px; border-radius:10px; border:0; background:var(--card2); color:var(--text); -webkit-user-select:text; user-select:text; }
+  .hint { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.4; }
+  .row { display:flex; gap:8px; margin-top:18px; }
+  .row button { flex:1; padding:12px; border:0; border-radius:10px; font-size:16px; background:var(--card2); color:var(--text); }
+  .row .save { background:var(--accent); }
+  .row .del { background:var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <div id="dot"></div><div id="status">Connecting…</div>
+  <button id="editBtn">Edit</button>
+</header>
+<div id="grid"></div>
+
+<dialog id="dlg">
+  <label>Button name</label>
+  <input id="fLabel" placeholder="e.g. Ability 4">
+  <label>Key combo</label>
+  <input id="fCombo" placeholder="e.g. alt+4" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="hint">Join keys with +. Modifiers: cmd, ctrl, alt, shift, fn.<br>
+    Keys: a–z, 0–9, f1–f12, space, enter, tab, esc, backspace, up, down, left, right, - = [ ] ; ' , . / ` \</div>
+  <div class="row">
+    <button class="del" id="fDel">Delete</button>
+    <button id="fCancel">Cancel</button>
+    <button class="save" id="fSave">Save</button>
+  </div>
+</dialog>
+
+<script>
+const DEFAULTS = [
+  {label:"Copy", combo:"cmd+c"}, {label:"Paste", combo:"cmd+v"}, {label:"Undo", combo:"cmd+z"},
+  {label:"Alt 1", combo:"alt+1"}, {label:"Alt 2", combo:"alt+2"}, {label:"Alt 3", combo:"alt+3"},
+  {label:"Alt 4", combo:"alt+4"}, {label:"Ctrl C", combo:"ctrl+c"}, {label:"Esc", combo:"esc"},
+];
+let buttons;
+try { buttons = JSON.parse(localStorage.getItem("buttons")) || DEFAULTS; } catch { buttons = DEFAULTS; }
+const saveButtons = () => { try { localStorage.setItem("buttons", JSON.stringify(buttons)); } catch {} };
+
+// --- connection (token is kept so the home-screen icon keeps working) ---
+let token = new URLSearchParams(location.search).get("k");
+try { if (token) localStorage.setItem("k", token); else token = localStorage.getItem("k"); } catch {}
+let ws, lastPing = 0;
+const dot = document.getElementById("dot"), statusEl = document.getElementById("status");
+function connect() {
+  if (!token) { statusEl.textContent = "Open the link shown on your Mac (it has ?k=…)"; return; }
+  ws = new WebSocket(`ws://${location.host}/ws?k=${encodeURIComponent(token)}`);
+  ws.onopen = () => { dot.className = "on"; statusEl.textContent = "Connected"; ping(); };
+  ws.onclose = () => { dot.className = ""; statusEl.textContent = "Reconnecting…"; setTimeout(connect, 700); };
+  ws.onmessage = e => {
+    if (e.data === "pong") statusEl.textContent = `Connected · ${Math.round(performance.now() - lastPing)} ms`;
+    else if (e.data.startsWith("err:")) statusEl.textContent = "⚠️ " + e.data.slice(4);
+  };
+}
+function ping() { if (ws && ws.readyState === 1) { lastPing = performance.now(); ws.send("ping"); } }
+setInterval(ping, 3000);
+const send = m => { if (ws && ws.readyState === 1) ws.send(m); };
+document.addEventListener("visibilitychange", () => { if (!document.hidden && (!ws || ws.readyState > 1)) connect(); });
+
+// --- buttons ---
+let editing = false, editIndex = -1;
+const grid = document.getElementById("grid");
+function render() {
+  grid.innerHTML = "";
+  buttons.forEach((b, i) => {
+    const el = document.createElement("div");
+    el.className = "key";
+    el.innerHTML = `<div class="label"></div><div class="combo"></div>`;
+    el.querySelector(".label").textContent = b.label;
+    el.querySelector(".combo").textContent = b.combo;
+    let isDown = false;
+    const up = () => { if (!isDown) return; isDown = false; el.classList.remove("down"); send("u:" + b.combo); };
+    el.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      if (editing) return openEditor(i);
+      isDown = true; el.classList.add("down"); send("d:" + b.combo);   // fires the instant you touch
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+    grid.appendChild(el);
+  });
+  const add = document.createElement("div");
+  add.className = "key add"; add.textContent = "+";
+  add.addEventListener("pointerdown", e => { e.preventDefault(); openEditor(-1); });
+  grid.appendChild(add);
+}
+
+const dlg = document.getElementById("dlg"), fLabel = document.getElementById("fLabel"), fCombo = document.getElementById("fCombo");
+function openEditor(i) {
+  editIndex = i;
+  const b = buttons[i] || {label:"", combo:""};
+  fLabel.value = b.label; fCombo.value = b.combo;
+  document.getElementById("fDel").style.display = i < 0 ? "none" : "";
+  dlg.showModal();
+}
+document.getElementById("fSave").onclick = () => {
+  const b = {label: fLabel.value.trim() || fCombo.value.trim(), combo: fCombo.value.trim().toLowerCase()};
+  if (!b.combo) return;
+  if (editIndex < 0) buttons.push(b); else buttons[editIndex] = b;
+  saveButtons(); render(); dlg.close();
+};
+document.getElementById("fDel").onclick = () => { buttons.splice(editIndex, 1); saveButtons(); render(); dlg.close(); };
+document.getElementById("fCancel").onclick = () => dlg.close();
+document.getElementById("editBtn").onclick = e => {
+  editing = !editing;
+  document.body.classList.toggle("edit", editing);
+  e.target.classList.toggle("active", editing);
+  e.target.textContent = editing ? "Done" : "Edit";
+};
+document.addEventListener("gesturestart", e => e.preventDefault());
+
+render(); connect();
+</script>
+</body>
+</html>
