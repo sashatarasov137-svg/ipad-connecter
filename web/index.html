@@ -51,7 +51,7 @@
   <label>Key combo</label>
   <input id="fCombo" placeholder="e.g. alt+4" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="hint">Join keys with +. Modifiers: cmd, ctrl, alt, shift, fn.<br>
-    Keys: a–z, 0–9, f1–f12, space, enter, tab, esc, backspace, up, down, left, right, - = [ ] ; ' , . / ` \</div>
+    Keys: a–z, 0–9, f1–f12, space, enter, tab, esc, backspace, up, down, left, right (or ← →), - = [ ] ; ' , . / ` \</div>
   <div class="row">
     <button class="del" id="fDel">Delete</button>
     <button id="fCancel">Cancel</button>
@@ -63,10 +63,13 @@
 const DEFAULTS = [
   {label:"Copy", combo:"cmd+c"}, {label:"Paste", combo:"cmd+v"}, {label:"Undo", combo:"cmd+z"},
   {label:"Alt 1", combo:"alt+1"}, {label:"Alt 2", combo:"alt+2"}, {label:"Alt 3", combo:"alt+3"},
-  {label:"Alt 4", combo:"alt+4"}, {label:"Ctrl C", combo:"ctrl+c"}, {label:"Esc", combo:"esc"},
+  {label:"Alt 4", combo:"alt+4"}, {label:"Ctrl ←", combo:"ctrl+left"}, {label:"Ctrl →", combo:"ctrl+right"}, {label:"Ctrl C", combo:"ctrl+c"}, {label:"Esc", combo:"esc"},
 ];
 let buttons;
 try { buttons = JSON.parse(localStorage.getItem("buttons")) || DEFAULTS; } catch { buttons = DEFAULTS; }
+// add new built-in buttons for people who already have a saved list
+for (const b of DEFAULTS.filter(d => d.combo.includes("ctrl+left") || d.combo.includes("ctrl+right")))
+  if (!buttons.some(x => x.combo === b.combo)) buttons.push(b);
 const saveButtons = () => { try { localStorage.setItem("buttons", JSON.stringify(buttons)); } catch {} };
 
 // --- connection (token is kept so the home-screen icon keeps working) ---

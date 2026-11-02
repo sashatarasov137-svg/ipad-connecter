@@ -27,6 +27,10 @@ KEYS = {
     "home": 115, "pageup": 116, "forwarddelete": 117, "end": 119, "pagedown": 121,
     "left": 123, "right": 124, "down": 125, "up": 126,
 }
+ALIASES = {"leftarrow": "left", "rightarrow": "right", "uparrow": "up", "downarrow": "down",
+           "ctl": "ctrl", "control": "ctrl", "option": "alt", "command": "cmd"}
+ARROWS = {123, 124, 125, 126}
+
 # modifier name -> (key code, CGEventFlags bit)
 MODS = {
     "cmd": (55, 0x100000), "command": (55, 0x100000),
@@ -59,7 +63,12 @@ def post(code, down, flags):
 
 def parse(combo):
     mods, key = [], None
-    for part in combo.lower().replace(" ", "").split("+"):
+    c = combo.lower()
+    for a, b in (("←", " left "), ("→", " right "), ("↑", " up "), ("↓", " down "),
+                 ("control", "ctrl"), ("arrow", ""), ("key", "")):
+        c = c.replace(a, b)
+    for part in c.replace("+", " ").split():
+        part = ALIASES.get(part, part)
         if part in MODS:
             mods.append(MODS[part])
         elif part in KEYS:
@@ -77,12 +86,13 @@ def press(combo, down):
             flags |= bit
             post(code, True, flags)
         if key is not None:
-            post(key, True, flags)
+            # arrow keys need these extra flags or macOS ignores ctrl+arrow (switching desktops)
+            post(key, True, flags | (0xA00000 if key in ARROWS else 0))
     else:
         for _, bit in mods:
             flags |= bit
         if key is not None:
-            post(key, False, flags)
+            post(key, False, flags | (0xA00000 if key in ARROWS else 0))
         for code, bit in reversed(mods):
             flags &= ~bit
             post(code, False, flags)
