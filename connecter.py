@@ -120,11 +120,14 @@ async def handle(r, w):
         ok = ("k=" + TOKEN) in query.split("&")
 
         if hdr.get("upgrade", "").lower() != "websocket":
+            print("Page opened by", w.get_extra_info("peername")[0])
             body = open(os.path.join(HERE, "web", "index.html"), "rb").read()
             w.write(b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"
                     b"Cache-Control: no-store\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
             await w.drain(); return
+        print("Button connection from", w.get_extra_info("peername")[0], "| code ok:", ok)
         if not ok:
+            print("  ! Wrong or missing ?k= code. Re-open the full link printed above on the iPad.")
             w.write(b"HTTP/1.1 403 Forbidden\r\n\r\n"); await w.drain(); return
 
         accept = base64.b64encode(hashlib.sha1(hdr["sec-websocket-key"].encode() + GUID).digest())
@@ -152,8 +155,11 @@ async def handle(r, w):
                     press(combo, False); held.discard(combo)
             except ValueError as e:
                 w.write(frame(1, ("err:" + str(e)).encode()[:120]))
-    except (asyncio.IncompleteReadError, ConnectionError, KeyError, IndexError):
-        pass
+    except (asyncio.IncompleteReadError, ConnectionError):
+        print("iPad disconnected")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        print("  ! Error above - please send it to Claude")
     finally:
         for combo in held:                 # never leave keys stuck down
             try: press(combo, False)
