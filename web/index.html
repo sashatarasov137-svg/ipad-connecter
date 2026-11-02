@@ -18,6 +18,10 @@
   #status { color:var(--muted); flex:1; }
   header button { background:var(--card2); color:var(--text); border:0; border-radius:10px; padding:10px 16px; font-size:16px; }
   header button.active { background:var(--accent); }
+  #tabs { display:flex; gap:8px; padding:0 16px 8px; overflow-x:auto; }
+  #tabs button { flex:1; background:var(--card); color:var(--text); border:0; border-radius:12px; padding:14px; font-size:18px; font-weight:600; }
+  #tabs button.active { background:var(--accent); }
+  #wtHint { color:var(--muted); font-size:14px; padding:0 16px 8px; }
   #grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; padding:8px 16px calc(env(safe-area-inset-bottom) + 16px); }
   .key { position:relative; height:120px; border-radius:18px; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; touch-action:none; transition:transform .05s; }
   .key.down { background:var(--accent); transform:scale(.96); }
@@ -43,6 +47,8 @@
   <div id="dot"></div><div id="status">Connecting…</div>
   <button id="editBtn">Edit</button>
 </header>
+<nav id="tabs"></nav>
+<div id="wtHint">First time: in War Thunder open <b>Controls</b>, click an action, then tap the matching button here. The game saves it.</div>
 <div id="grid"></div>
 
 <dialog id="dlg">
@@ -60,7 +66,7 @@
 </dialog>
 
 <script>
-const DEFAULTS = [
+const MAC = [
   {label:"Screenshot area", combo:"cmd+shift+4"}, {label:"Screenshot all", combo:"cmd+shift+3"},
   {label:"Screenshot tool", combo:"cmd+shift+5"}, {label:"Force quit", combo:"cmd+alt+esc"},
   {label:"Lock Mac", combo:"ctrl+cmd+q"}, {label:"Emoji", combo:"ctrl+cmd+space"},
@@ -70,17 +76,83 @@ const DEFAULTS = [
   {label:"Desktop →", combo:"ctrl+right"}, {label:"Mission Ctrl", combo:"ctrl+up"},
   {label:"App windows", combo:"ctrl+down"}, {label:"Alt 4", combo:"alt+4"},
 ];
-const LIST_VERSION = 2;  // bump to replace everyone's buttons with the new defaults
-let buttons;
-try { buttons = JSON.parse(localStorage.getItem("buttons")) || DEFAULTS; } catch { buttons = DEFAULTS; }
+// War Thunder: every action gets its own unused combo. Bind it in the game by
+// clicking the action in Controls and then tapping the button here.
+const DEFAULT_MODES = [
+  {name:"Mac", buttons: MAC},
+  {name:"WT Air", buttons: [
+    {label:"Landing gear", combo:"ctrl+alt+1"},
+    {label:"Flaps up", combo:"ctrl+alt+2"},
+    {label:"Flaps down", combo:"ctrl+alt+3"},
+    {label:"Airbrake", combo:"ctrl+alt+4"},
+    {label:"Bombs", combo:"ctrl+alt+5"},
+    {label:"Rockets", combo:"ctrl+alt+6"},
+    {label:"Torpedo", combo:"ctrl+alt+7"},
+    {label:"Missile", combo:"ctrl+alt+8"},
+    {label:"Flares / chaff", combo:"ctrl+alt+9"},
+    {label:"Engine on/off", combo:"ctrl+alt+0"},
+    {label:"WEP / afterburner", combo:"ctrl+alt+q"},
+    {label:"Radar on/off", combo:"ctrl+alt+w"},
+    {label:"Radar lock", combo:"ctrl+alt+e"},
+    {label:"Missile lock", combo:"ctrl+alt+r"},
+    {label:"Gunner view", combo:"ctrl+alt+t"},
+    {label:"Cockpit view", combo:"ctrl+alt+y"},
+    {label:"Look back", combo:"ctrl+alt+u"},
+    {label:"Bomb sight", combo:"ctrl+alt+i"},
+    {label:"Instructor on/off", combo:"ctrl+alt+o"},
+    {label:"Map", combo:"ctrl+alt+p"},
+    {label:"Leave plane", combo:"ctrl+alt+a"}
+  ]},
+  {name:"WT Ground", buttons: [
+    {label:"Repair", combo:"ctrl+alt+s"},
+    {label:"Extinguish fire", combo:"ctrl+alt+d"},
+    {label:"Smoke grenade", combo:"ctrl+alt+f"},
+    {label:"Exhaust smoke", combo:"ctrl+alt+g"},
+    {label:"Rangefinder", combo:"ctrl+alt+h"},
+    {label:"Scout / spot", combo:"ctrl+alt+j"},
+    {label:"Artillery", combo:"ctrl+alt+k"},
+    {label:"Binoculars", combo:"ctrl+alt+l"},
+    {label:"Shell 1", combo:"ctrl+alt+z"},
+    {label:"Shell 2", combo:"ctrl+alt+x"},
+    {label:"Shell 3", combo:"ctrl+alt+c"},
+    {label:"Shell 4", combo:"ctrl+alt+v"},
+    {label:"Machine gun", combo:"ctrl+alt+b"},
+    {label:"Lock target", combo:"ctrl+alt+n"},
+    {label:"Cruise up", combo:"ctrl+alt+m"},
+    {label:"Cruise down", combo:"ctrl+alt+shift+1"},
+    {label:"Toggle sight", combo:"ctrl+alt+shift+2"},
+    {label:"Gunner view", combo:"ctrl+alt+shift+3"},
+    {label:"Map", combo:"ctrl+alt+shift+4"},
+    {label:"Leave tank", combo:"ctrl+alt+shift+5"}
+  ]},
+];
+const LIST_VERSION = 3;  // bump to replace everyone's buttons with the new defaults
+let modes, mode = 0;
 try {
-  if (Number(localStorage.getItem("listVersion")) < LIST_VERSION) {
-    buttons = DEFAULTS.slice();
+  modes = JSON.parse(localStorage.getItem("modes"));
+  if (!modes || Number(localStorage.getItem("listVersion")) < LIST_VERSION) {
+    modes = structuredClone(DEFAULT_MODES);
     localStorage.setItem("listVersion", LIST_VERSION);
-    localStorage.setItem("buttons", JSON.stringify(buttons));
+    localStorage.setItem("modes", JSON.stringify(modes));
   }
-} catch {}
-const saveButtons = () => { try { localStorage.setItem("buttons", JSON.stringify(buttons)); } catch {} };
+  mode = Math.min(Number(localStorage.getItem("mode")) || 0, modes.length - 1);
+} catch { modes = structuredClone(DEFAULT_MODES); }
+let buttons = modes[mode].buttons;
+const saveButtons = () => { try { localStorage.setItem("modes", JSON.stringify(modes)); } catch {} };
+function setMode(i) {
+  mode = i; buttons = modes[i].buttons;
+  try { localStorage.setItem("mode", i); } catch {}
+  document.querySelectorAll("#tabs button").forEach((t, j) => t.classList.toggle("active", j === i));
+  document.getElementById("wtHint").style.display = modes[i].name.startsWith("WT") ? "" : "none";
+  render();
+}
+const tabs = document.getElementById("tabs");
+modes.forEach((m, i) => {
+  const t = document.createElement("button");
+  t.textContent = m.name;
+  t.onclick = () => setMode(i);
+  tabs.appendChild(t);
+});
 
 // --- connection (token is kept so the home-screen icon keeps working) ---
 let token = new URLSearchParams(location.search).get("k");
@@ -155,7 +227,7 @@ document.getElementById("editBtn").onclick = e => {
 };
 document.addEventListener("gesturestart", e => e.preventDefault());
 
-render(); connect();
+setMode(mode); connect();
 </script>
 </body>
 </html>
