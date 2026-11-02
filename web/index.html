@@ -21,7 +21,7 @@
   #grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; padding:8px 16px calc(env(safe-area-inset-bottom) + 16px); }
   .key { position:relative; height:120px; border-radius:18px; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; touch-action:none; transition:transform .05s; }
   .key.down { background:var(--accent); transform:scale(.96); }
-  .key .label { font-size:26px; font-weight:700; text-align:center; padding:0 8px; }
+  .key .label { font-size:22px; font-weight:700; text-align:center; padding:0 8px; }
   .key .combo { font-size:13px; color:var(--muted); margin-top:6px; }
   .key.down .combo { color:#dfe8ff; }
   body.edit .key { outline:2px dashed var(--muted); }
@@ -61,15 +61,25 @@
 
 <script>
 const DEFAULTS = [
-  {label:"Copy", combo:"cmd+c"}, {label:"Paste", combo:"cmd+v"}, {label:"Undo", combo:"cmd+z"},
-  {label:"Alt 1", combo:"alt+1"}, {label:"Alt 2", combo:"alt+2"}, {label:"Alt 3", combo:"alt+3"},
-  {label:"Alt 4", combo:"alt+4"}, {label:"Ctrl ←", combo:"ctrl+left"}, {label:"Ctrl →", combo:"ctrl+right"}, {label:"Ctrl C", combo:"ctrl+c"}, {label:"Esc", combo:"esc"},
+  {label:"Screenshot area", combo:"cmd+shift+4"}, {label:"Screenshot all", combo:"cmd+shift+3"},
+  {label:"Screenshot tool", combo:"cmd+shift+5"}, {label:"Force quit", combo:"cmd+alt+esc"},
+  {label:"Lock Mac", combo:"ctrl+cmd+q"}, {label:"Emoji", combo:"ctrl+cmd+space"},
+  {label:"Full screen", combo:"ctrl+cmd+f"}, {label:"Reopen tab", combo:"cmd+shift+t"},
+  {label:"Paste plain", combo:"cmd+alt+shift+v"}, {label:"Hide others", combo:"cmd+alt+h"},
+  {label:"Hidden files", combo:"cmd+shift+."}, {label:"Desktop ←", combo:"ctrl+left"},
+  {label:"Desktop →", combo:"ctrl+right"}, {label:"Mission Ctrl", combo:"ctrl+up"},
+  {label:"App windows", combo:"ctrl+down"}, {label:"Alt 4", combo:"alt+4"},
 ];
+const LIST_VERSION = 2;  // bump to replace everyone's buttons with the new defaults
 let buttons;
 try { buttons = JSON.parse(localStorage.getItem("buttons")) || DEFAULTS; } catch { buttons = DEFAULTS; }
-// add new built-in buttons for people who already have a saved list
-for (const b of DEFAULTS.filter(d => d.combo.includes("ctrl+left") || d.combo.includes("ctrl+right")))
-  if (!buttons.some(x => x.combo === b.combo)) buttons.push(b);
+try {
+  if (Number(localStorage.getItem("listVersion")) < LIST_VERSION) {
+    buttons = DEFAULTS.slice();
+    localStorage.setItem("listVersion", LIST_VERSION);
+    localStorage.setItem("buttons", JSON.stringify(buttons));
+  }
+} catch {}
 const saveButtons = () => { try { localStorage.setItem("buttons", JSON.stringify(buttons)); } catch {} };
 
 // --- connection (token is kept so the home-screen icon keeps working) ---
