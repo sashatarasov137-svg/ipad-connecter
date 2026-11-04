@@ -76,10 +76,20 @@ const MAC = [
   {label:"Desktop →", combo:"ctrl+right"}, {label:"Mission Ctrl", combo:"ctrl+up"},
   {label:"App windows", combo:"ctrl+down"}, {label:"Alt 4", combo:"alt+4"},
 ];
+const DESKTOP = [
+  {label:"Copy", combo:"cmd+c"}, {label:"Paste", combo:"cmd+v"}, {label:"Cut", combo:"cmd+x"},
+  {label:"Undo", combo:"cmd+z"}, {label:"Redo", combo:"cmd+shift+z"}, {label:"Select all", combo:"cmd+a"},
+  {label:"Save", combo:"cmd+s"}, {label:"Find", combo:"cmd+f"}, {label:"Spotlight", combo:"cmd+space"},
+  {label:"Switch app", combo:"cmd+tab"}, {label:"Close window", combo:"cmd+w"}, {label:"Quit app", combo:"cmd+q"},
+  {label:"New tab", combo:"cmd+t"}, {label:"Next tab", combo:"ctrl+tab"}, {label:"Prev tab", combo:"ctrl+shift+tab"},
+  {label:"Refresh", combo:"cmd+r"}, {label:"Minimize", combo:"cmd+m"}, {label:"Settings", combo:"cmd+,"},
+  {label:"Print", combo:"cmd+p"}, {label:"New window", combo:"cmd+n"},
+];
 // War Thunder: every action gets its own unused combo. Bind it in the game by
 // clicking the action in Controls and then tapping the button here.
 const DEFAULT_MODES = [
   {name:"Mac", buttons: MAC},
+  {name:"Desktop", buttons: DESKTOP},
   {name:"WT Air", buttons: [
     {label:"Landing gear", combo:"ctrl+alt+1"},
     {label:"Flaps up", combo:"ctrl+alt+2"},
@@ -133,6 +143,10 @@ try {
   if (!modes || Number(localStorage.getItem("listVersion")) < LIST_VERSION) {
     modes = structuredClone(DEFAULT_MODES);
     localStorage.setItem("listVersion", LIST_VERSION);
+    localStorage.setItem("modes", JSON.stringify(modes));
+  }
+  if (!modes.some(m => m.name === "Desktop")) {   // add new mode without wiping custom buttons
+    modes.splice(1, 0, {name:"Desktop", buttons: structuredClone(DESKTOP)});
     localStorage.setItem("modes", JSON.stringify(modes));
   }
   mode = Math.min(Number(localStorage.getItem("mode")) || 0, modes.length - 1);
