@@ -86,11 +86,26 @@ const DESKTOP = [
   {label:"Print", combo:"cmd+p"}, {label:"New window", combo:"cmd+n"},
   {label:"Desktop ←", combo:"ctrl+left"}, {label:"Desktop →", combo:"ctrl+right"},
 ];
+// Code: VS Code shortcuts on Mac (many also work in other code editors)
+const CODE = [
+  {label:"Command palette", combo:"cmd+shift+p"}, {label:"Open file", combo:"cmd+p"},
+  {label:"Comment line", combo:"cmd+/"}, {label:"Format code", combo:"alt+shift+f"},
+  {label:"Search all files", combo:"cmd+shift+f"}, {label:"Go to definition", combo:"f12"},
+  {label:"Rename", combo:"f2"}, {label:"Terminal", combo:"ctrl+`"},
+  {label:"Sidebar", combo:"cmd+b"}, {label:"Move line ↑", combo:"alt+up"},
+  {label:"Move line ↓", combo:"alt+down"}, {label:"Copy line ↓", combo:"alt+shift+down"},
+  {label:"Delete line", combo:"cmd+shift+k"}, {label:"Select next match", combo:"cmd+d"},
+  {label:"Cursor below", combo:"cmd+alt+down"}, {label:"Go to line", combo:"ctrl+g"},
+  {label:"Split editor", combo:"cmd+\\"}, {label:"Indent", combo:"cmd+]"},
+  {label:"Outdent", combo:"cmd+["}, {label:"Save all", combo:"cmd+alt+s"},
+  {label:"Run / debug", combo:"f5"}, {label:"Stop", combo:"shift+f5"},
+];
 // War Thunder: every action gets its own unused combo. Bind it in the game by
 // clicking the action in Controls and then tapping the button here.
 const DEFAULT_MODES = [
   {name:"Mac", buttons: MAC},
   {name:"Desktop", buttons: DESKTOP},
+  {name:"Code", buttons: CODE},
   {name:"WT Air", buttons: [
     {label:"Landing gear", combo:"ctrl+alt+1"},
     {label:"Flaps up", combo:"ctrl+alt+2"},
@@ -150,6 +165,9 @@ try {
     modes.splice(1, 0, {name:"Desktop", buttons: structuredClone(DESKTOP)});
     localStorage.setItem("modes", JSON.stringify(modes));
   }
+  DEFAULT_MODES.forEach((d, i) => {   // add any new modes without wiping custom buttons
+    if (!modes.some(m => m.name === d.name)) modes.splice(Math.min(i, modes.length), 0, structuredClone(d));
+  });
   const desk = modes.find(m => m.name === "Desktop");   // add newly added Desktop buttons
   for (const b of DESKTOP) if (!desk.buttons.some(x => x.combo === b.combo)) desk.buttons.push({...b});
   localStorage.setItem("modes", JSON.stringify(modes));
@@ -161,6 +179,7 @@ const saveButtons = () => { try { localStorage.setItem("modes", JSON.stringify(m
 const THEMES = {
   "Mac":       {bg:"#111317", card:"#1f232b", card2:"#2b313c", accent:"#4f8cff"},
   "Desktop":   {bg:"#1a1226", card:"#2a1f3d", card2:"#3a2b54", accent:"#a46bff"},
+  "Code":      {bg:"#0d1412", card:"#16241f", card2:"#20352d", accent:"#2ee6a6"},
   "WT Air":    {bg:"#0b1a2b", card:"#12304d", card2:"#1b4166", accent:"#2fb5ff"},
   "WT Ground": {bg:"#161a0f", card:"#2b331c", card2:"#3a4526", accent:"#9bc53d"},
 };
