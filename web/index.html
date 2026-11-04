@@ -84,6 +84,7 @@ const DESKTOP = [
   {label:"New tab", combo:"cmd+t"}, {label:"Next tab", combo:"ctrl+tab"}, {label:"Prev tab", combo:"ctrl+shift+tab"},
   {label:"Refresh", combo:"cmd+r"}, {label:"Minimize", combo:"cmd+m"}, {label:"Settings", combo:"cmd+,"},
   {label:"Print", combo:"cmd+p"}, {label:"New window", combo:"cmd+n"},
+  {label:"Desktop ←", combo:"ctrl+left"}, {label:"Desktop →", combo:"ctrl+right"},
 ];
 // War Thunder: every action gets its own unused combo. Bind it in the game by
 // clicking the action in Controls and then tapping the button here.
@@ -149,6 +150,9 @@ try {
     modes.splice(1, 0, {name:"Desktop", buttons: structuredClone(DESKTOP)});
     localStorage.setItem("modes", JSON.stringify(modes));
   }
+  const desk = modes.find(m => m.name === "Desktop");   // add newly added Desktop buttons
+  for (const b of DESKTOP) if (!desk.buttons.some(x => x.combo === b.combo)) desk.buttons.push({...b});
+  localStorage.setItem("modes", JSON.stringify(modes));
   mode = Math.min(Number(localStorage.getItem("mode")) || 0, modes.length - 1);
 } catch { modes = structuredClone(DEFAULT_MODES); }
 let buttons = modes[mode].buttons;
