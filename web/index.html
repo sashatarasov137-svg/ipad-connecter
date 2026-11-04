@@ -11,7 +11,7 @@
 <style>
   :root { --bg:#111317; --card:#1f232b; --card2:#2b313c; --text:#f2f4f8; --muted:#8b93a3; --accent:#4f8cff; --ok:#33c26b; --bad:#ff5a5a; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:16px -apple-system, system-ui, sans-serif; overscroll-behavior:none; }
+  html, body { transition:background .25s; margin:0; height:100%; background:var(--bg); color:var(--text); font:16px -apple-system, system-ui, sans-serif; overscroll-behavior:none; }
   header { display:flex; align-items:center; gap:12px; padding:calc(env(safe-area-inset-top) + 10px) 16px 10px; }
   #dot { width:12px; height:12px; border-radius:50%; background:var(--bad); }
   #dot.on { background:var(--ok); }
@@ -157,7 +157,16 @@ try {
 } catch { modes = structuredClone(DEFAULT_MODES); }
 let buttons = modes[mode].buttons;
 const saveButtons = () => { try { localStorage.setItem("modes", JSON.stringify(modes)); } catch {} };
+// each mode gets its own background, button and highlight colors
+const THEMES = {
+  "Mac":       {bg:"#111317", card:"#1f232b", card2:"#2b313c", accent:"#4f8cff"},
+  "Desktop":   {bg:"#1a1226", card:"#2a1f3d", card2:"#3a2b54", accent:"#a46bff"},
+  "WT Air":    {bg:"#0b1a2b", card:"#12304d", card2:"#1b4166", accent:"#2fb5ff"},
+  "WT Ground": {bg:"#161a0f", card:"#2b331c", card2:"#3a4526", accent:"#9bc53d"},
+};
 function setMode(i) {
+  const th = THEMES[modes[i].name] || THEMES.Mac;
+  for (const k in th) document.documentElement.style.setProperty("--" + k, th[k]);
   mode = i; buttons = modes[i].buttons;
   try { localStorage.setItem("mode", i); } catch {}
   document.querySelectorAll("#tabs button").forEach((t, j) => t.classList.toggle("active", j === i));
