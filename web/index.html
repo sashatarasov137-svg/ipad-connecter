@@ -112,6 +112,16 @@ const CLAUDE = [
   {label:"Claude Code: cancel", combo:"ctrl+c"}, {label:"Claude Code: history", combo:"ctrl+r"},
   {label:"Type /", combo:"/"}, {label:"Switch app", combo:"cmd+tab"},
 ];
+// YouTube (click the video page once so it has focus)
+const YOUTUBE = [
+  {label:"Play / pause", combo:"k"}, {label:"Back 10s", combo:"j"}, {label:"Forward 10s", combo:"l"},
+  {label:"Back 5s", combo:"left"}, {label:"Forward 5s", combo:"right"}, {label:"Restart", combo:"0"},
+  {label:"Full screen", combo:"f"}, {label:"Theater mode", combo:"t"}, {label:"Mini player", combo:"i"},
+  {label:"Mute", combo:"m"}, {label:"Volume up", combo:"up"}, {label:"Volume down", combo:"down"},
+  {label:"Captions", combo:"c"}, {label:"Slower", combo:"shift+,"}, {label:"Faster", combo:"shift+."},
+  {label:"Next video", combo:"shift+n"}, {label:"Previous video", combo:"shift+p"}, {label:"Search", combo:"/"},
+  {label:"Frame back", combo:","}, {label:"Frame forward", combo:"."}, {label:"Exit full screen", combo:"esc"},
+];
 // War Thunder: every action gets its own unused combo. Bind it in the game by
 // clicking the action in Controls and then tapping the button here.
 const DEFAULT_MODES = [
@@ -119,6 +129,7 @@ const DEFAULT_MODES = [
   {name:"Desktop", buttons: DESKTOP},
   {name:"Code", buttons: CODE},
   {name:"Claude", buttons: CLAUDE},
+  {name:"YouTube", buttons: YOUTUBE},
   {name:"WT Air", buttons: [
     {label:"Landing gear", combo:"ctrl+alt+1"},
     {label:"Flaps up", combo:"ctrl+alt+2"},
@@ -194,6 +205,7 @@ const THEMES = {
   "Desktop":   {bg:"#1a1226", card:"#2a1f3d", card2:"#3a2b54", accent:"#a46bff"},
   "Code":      {bg:"#0d1412", card:"#16241f", card2:"#20352d", accent:"#2ee6a6"},
   "Claude":    {bg:"#1c1512", card:"#2e221c", card2:"#423127", accent:"#d97757"},
+  "YouTube":   {bg:"#1a0d0d", card:"#2d1616", card2:"#432020", accent:"#ff3b3b"},
   "WT Air":    {bg:"#0b1a2b", card:"#12304d", card2:"#1b4166", accent:"#2fb5ff"},
   "WT Ground": {bg:"#161a0f", card:"#2b331c", card2:"#3a4526", accent:"#9bc53d"},
 };
